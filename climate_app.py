@@ -6,6 +6,7 @@ from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
 
+begin = '2016-08-23'
 #################################################
 # Database Setup
 #################################################
@@ -33,8 +34,8 @@ def home():
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/<start><br/>"
-        f"/api/v1.0/<start>/<end>"
+        f"/api/v1.0/date<br/>"
+        f"/api/v1.0/start_date/end_date"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -82,9 +83,27 @@ def tobs():
     tobs_list = list(np.ravel(results))
     return jsonify(tobs_list)
 
-@app.route("/api/v1.0/<start>")
-    def <start>(): 
-        
+
+
+@app.route("/api/v1.0/<date>")
+def startDateOnly(date):
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+    # Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range.
+    # When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date.
+    day_temp_results = session.query(func.min(measurement.tobs), func.avg(measurement.tobs), func.max(measurement.tobs)).filter(measurement.date >= date).all()
+    return jsonify(day_temp_results)
+
+
+
+@app.route("/api/v1.0/<start>/<end>")
+def startDateEndDate(start,end):
+    session = Session(engine)
+    # Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range.
+    # When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive.
+    multi_day_temp_results = session.query(func.min(measurement.tobs), func.avg(measurement.tobs), func.max(measurement.tobs)).filter(measurement.date >= start).filter(measurement.date <= end).all()
+    return jsonify(multi_day_temp_results)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
